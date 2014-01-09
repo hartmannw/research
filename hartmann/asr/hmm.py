@@ -12,3 +12,15 @@ class HMM:
         self.modelid = modelid
         self.transitionid = transitionid
 
+    # Make the number of transitions equal the number of states
+    def fill_transitions(self):
+        if len(self.transitionid) != len(self.modelid):
+            self.transitionid = [None] * len(self.modelid)
+
+    def context_id(self):
+        return " ".join([str(x) for x in self.context])
+
+    def model_id(self):
+        return " ".join([str(x) for x in self.modelid]) + "&" + " ".join(
+                [str(x) for x in self.transitionid])
+

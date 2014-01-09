@@ -11,6 +11,10 @@ class MOG:
         self.weight = weight
         self.check_components()
 
+    def clear(self):
+        self.gaussian = []
+        self.weight = np.array([])
+
     def add_gaussian(self, gaussian, weight):
         self.gaussian.append(gaussian)
         self.weight = np.append(self.weight,weight)
@@ -48,6 +52,10 @@ class MOG:
         third_term = 0.5 * np.log(third_term)
         return (first_term + second_term + third_term)
 
+    def verify(self):
+        self.check_components()
+        for g in self.gaussian:
+            g.verify()
 
     def check_components(self):
         if len(self.weight) != len(self.gaussian):

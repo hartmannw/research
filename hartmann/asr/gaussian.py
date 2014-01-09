@@ -39,6 +39,13 @@ class Gaussian:
     def dimension_check(self):
         if len(self.mean) != len(self.variance):
             raise ValueError('mean and variance not same dimension.')
+
+    def verify(self):
+        self.dimension_check()
+        for v in self.variance:
+            if v <= 0:
+                raise ValueError(' invalid variance.')
+
     
     def set_mean(self, mean):
         self._constant_valid = False
