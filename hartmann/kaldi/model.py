@@ -115,14 +115,6 @@ def load_gmm_hmm(ctxfile, modelfile):
                     var.append([float(x) for x in line.strip().split()])
 
         model.verify()
-        print model.information()
-        model.reduce_transitions()
-        model.verify()
-        print model.information()
-        tiedlist = model.create_hmm_tiedlist()
-        print len(tiedlist)
-        print model.hmm[0].model_id()
-        print model.hmm[666].model_id()
-        print model.hmm[43802].model_id()
+        return model
 
 

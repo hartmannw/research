@@ -28,11 +28,17 @@ class Gaussian:
         if self.dimension != len(point):
             raise ValueError('dimension of point vector does not match ' +
                     'dimension of Gaussian.')
-        result = 0.0
-        for x,m,v in zip(point, self.mean, self.variance):
-            result += math.pow(m - x, 2.0) / v
+        #for x,m,v in zip(point, self.mean, self.variance):
+        #    result += math.pow(m - x, 2.0) / v
+        result = np.sum(np.divide(np.square(np.subtract(self.mean, point)), self.variance))
         return self.constant * math.exp(-0.5 * result)
 
+    # Quickly generates the likelihood required by the CSD calculation.
+    def csd_likelihood(self, g):
+        variance = self.variance + g.variance
+        result = np.sum(np.divide(np.square(np.subtract(self.mean, g.mean)), variance))
+        return self.constant * math.exp(-0.5 * result) * self.variance.prod() / variance.prod()
+    
     def log_likelihood(self, point):
         return np.log(self.likelihood(point))
 
