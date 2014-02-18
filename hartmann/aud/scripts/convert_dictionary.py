@@ -26,6 +26,11 @@ def main():
             ' the dictionary to.')
     args = parser.parse_args()
 
+    args.position_dependent = True
+
+    # Build a set of possible AUD units.
+    letters = string.letters
+    aud = [x + y for x in letters for y in letters]
 
     # Load the phones.
     phonemap = {}
@@ -49,6 +54,8 @@ def main():
             data = line.strip().split('|')
             for hmm in data:
                 ctx = [phonemap[int(x)] for x in hmm.split()]
+                if not args.position_dependent:
+                    ctx = [x.split('_')[0] for x in ctx]
                 # Add counts to stats
                 mono_stat[ctx[1].split('_')[0]][labels[index]]+=1
                 lstat[ ctx[0] + "-" + ctx[1] + "+" + ctx[2] ][labels[index]]+=1
@@ -60,7 +67,7 @@ def main():
     # Build map to new labels
     lmap = {}
     for ctx, counts in lstat.iteritems():
-        lmap[ctx] = str(counts.most_common(1)[0][0])
+        lmap[ctx] = aud[counts.most_common(1)[0][0]]
 
     fout = codecs.open(args.output, mode='w', encoding='utf-8')
     with codecs.open(args.dictionary, mode='r', encoding='utf-8') as fin:
@@ -68,7 +75,9 @@ def main():
             data = line.strip().split()
             word = data[0]
             pron = data[2:]
-            fout.write(word + " " + 
+            if not args.position_dependent:
+                pron = [x.split('_')[0] for x in pron]
+            fout.write(word + "\t" + 
                     " ".join(translate_pronunciation(pron, lmap)) + "\n")
     fout.close()
    
@@ -77,8 +86,8 @@ def main():
             fout.write(phone + " " + str(counts.most_common(1)[0][0]) + '\n')
 
 def translate_pronunciation(pron, lmap):
-    pron.insert(0, 'SIL_S')
-    pron.append('SIL_S')
+    pron.insert(0, 'SIL')
+    pron.append('SIL')
     ret = []
     for i in range(1, len(pron)-1):
         if pron[i-1] + "-" + pron[i] + "+" + pron[i+1] in lmap:

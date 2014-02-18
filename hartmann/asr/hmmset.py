@@ -96,6 +96,31 @@ class HMMSet:
         self.build_ci_index()
         self.build_cd_index()
 
+    def make_subset(self, hmmlist):
+        subset_hmm = []
+        for hmmid in hmmlist:
+            subset_hmm.append(self.hmm[hmmid])
+        self.hmm = subset_hmm
+       
+        # Now we need to reduce the states
+        modelmap = {}
+        model_count = 0
+        for hmm in self.hmm:
+            for m in hmm.modelid:
+                if m not in modelmap:
+                    modelmap[m] = model_count
+                    model_count = model_count + 1
+        model = [None] * model_count
+        for key, val in modelmap.iteritems():
+            model[val] = self.model[key]
+        self.model = model
+        for hmm in self.hmm:
+            for i,m in enumerate(hmm.modelid):
+                hmm.modelid[i] = modelmap[m]
+
+        self.build_ci_index()
+        self.build_cd_index()
+
     def create_hmm_tiedlist(self):
         tiedlist = {}
         for i,h in enumerate(self.hmm):
@@ -111,7 +136,7 @@ class HMMSet:
     def compute_hmm_similarity(self, tiedlist):
         state_similarity = np.zeros( (len(self.model), len(self.model)) )
         for (i, j), value in np.ndenumerate(state_similarity):
-            state_similarity[i,j] = random.random()
+            #state_similarity[i,j] = random.random()
             if i == j:
                 state_similarity[i,j] = 1
                 print "State similarity row: " + str(i) + " of " + str(len(self.model))
@@ -119,7 +144,7 @@ class HMMSet:
                 state_similarity[i,j] = state_similarity[j,i]
             else:
                 state_similarity[i,j] = 1 / (self.model[i].csd(self.model[j]) + 1)
-                #print i,j,state_similarity[i,j]
+            #print i,j,state_similarity[i,j]
 
         # Generate the list of location matrices
         location = []
@@ -131,21 +156,19 @@ class HMMSet:
 
         # Compute the hmm_similarity
         sm = np.zeros( (len(tiedlist), len(tiedlist)) )
-        for (i,j), val in np.ndenumerate(sm):
-            if i == j:
-                print "HMM similarity row: " + str(i) + " of " + str(len(tiedlist))
+        for (r,c), val in np.ndenumerate(sm):
+            i = tiedlist[r][0]
+            j = tiedlist[c][0]
+            if r == c:
+                print "HMM similarity row: " + str(r) + " of " + str(len(tiedlist))
             statesi = len(self.hmm[i].transitionid)
             statesj = len(self.hmm[j].transitionid)
             cor = np.zeros( (statesi, statesj) )
-            #for t in range(0, location[i].shape[1]):
-            #    for (si, sj), val in np.ndenumerate(cor):
-            #        cor[si,sj] += location[i][si, t] * location[j][sj,t]
 
-            cor_norm = max([elength[i], elength[j]])
-            for (r, c), val in np.ndenumerate(cor):
-                cor[r,c] = np.sum( np.multiply(location[i][r,:], location[j][c,:]) ) / cor_norm
-                #cor[r,c] = cor[r,c] / max([elength[i], elength[j]])
-                sm[i,j] += cor[r,c] * (state_similarity[ self.hmm[i].modelid[r], self.hmm[j].modelid[c] ])
+            cor_norm = max([elength[r], elength[c]])
+            for (cor_r, cor_c), val in np.ndenumerate(cor):
+                cor[cor_r,cor_c] = np.sum( np.multiply(location[r][cor_r,:], location[c][cor_c,:]) ) / cor_norm
+                sm[r,c] += cor[cor_r,cor_c] * (state_similarity[ self.hmm[i].modelid[cor_r], self.hmm[j].modelid[cor_c] ])
         return sm
 
 
