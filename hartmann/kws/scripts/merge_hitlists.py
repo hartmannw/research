@@ -48,7 +48,6 @@ def main():
     
     kwlist = []
     for idx, kw in enumerate(args.kwlist):
-        print "Loading Hitlist: ", kw
         kwlist.append(ParseKWList(kw, idx, args))
   
     keywords = []
@@ -67,7 +66,6 @@ def main():
     hitlist = {}
     for key in keywords:
         hitlist[key] = []
-        print "Merging Keyword: ", key
         for kw in kwlist:
             for hit in kw.get(key, []):
                 hitlist[key].append(hit)
