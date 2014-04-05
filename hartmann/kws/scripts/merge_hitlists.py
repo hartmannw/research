@@ -21,7 +21,7 @@ def main():
     parser.add_argument("--prune", "-b", default=0.0, type=float, 
             help='Only hits >= prune are printed.')
     parser.add_argument("--codec", "-c", default='utf-8', help='Codec used for ' +
-            'the lm file and the output.')
+            'the output.')
     parser.add_argument("--keywords", "-k", help='List of keywords ' +
             'to consider. Useful to merge only certain keywords. Default is all' +
             ' keywords.')

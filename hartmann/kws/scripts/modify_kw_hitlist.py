@@ -5,6 +5,7 @@
 import sys
 import string
 import argparse
+import codecs
 from hartmann.kws import Hitlist
 from hartmann.kws import KWHit
 
@@ -14,12 +15,14 @@ def main():
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             description='Modify a single hitlist.')
     parser.add_argument("kwfile", help="Keyword hit list")
+    parser.add_argument("--codec", "-c", default='utf-8', help='Codec used for ' +
+            'the output.')
     parser.add_argument("--remove-no", "-r", action='store_true', 
             help='Only hits >= threshold are printed.')
     parser.add_argument("--keywords", "-k", help='List of keywords ' +
             'to consider. Useful to write only certain keywords. Default is all' +
             ' keywords.')
-    parser.add_argument("--output", "-o", default=sys.stdout, help='Name of the' +
+    parser.add_argument("--output", "-o", default="-", help='Name of the' +
             ' file to write the hitlist.')
     parser.add_argument("--threshold", "-t", default=0.5, type=float, 
             help="Minimum score for a hit to be considered a keyword.")
@@ -46,7 +49,13 @@ def main():
         hitlist.PruneByScore(args.minimum_score)
     if args.remove_no:
         hitlist.PruneByDecision()
-    hitlist.WriteXML(args.output)
+
+    if args.output == "-":
+        fout = codecs.getwriter(args.codec)(sys.stdout)
+    else:
+        fout = codecs.open(args.output, mode='w', encoding=args.codec)    
+    hitlist.WriteXML(fout)
+    fout.close()
 
     
 if __name__ == "__main__":
