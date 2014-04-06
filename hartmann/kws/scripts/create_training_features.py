@@ -31,6 +31,8 @@ def main():
     parser.add_argument("--kwfeatures", "-k", help="File containing keyword features.")
     parser.add_argument("--target", "-t", help="File containing keyword specific target information.")
     parser.add_argument("--gold", "-g", help="Gold standard hitlist.")
+    parser.add_argument("--filter-zero-target", "-f", action='store_true', 
+            help="Remove entries with a target of 0.")
   
     args = parser.parse_args()
 
@@ -65,27 +67,30 @@ def main():
     
     for k in sorted(hitlist.keywords):
         for hit in hitlist.hitlist[k]:
-            fout.write(hit.filename + " " + hit.channel + " " + str(hit.tbeg))
-            fout.write(" " + str(hit.dur) + " " + k)
-            # Now write the actual features
+            item = []
+            feature_target = "0"
+            item.append(hit.filename)
+            item.append(hit.channel)
+            item.append(str(hit.tbeg))
+            item.append(str(hit.dur))
+            item.append(k)
+            # Now add the actual features
             if args.kwfeatures:
-                fout.write(" " + kwfeatures[k])
+                item.append(kwfeatures[k])
             for score_idx in range(len(args.kwlist)):
-                fout.write(" " + str(hit.score_set.get(score_idx, 0.0)))
+                item.append(str(hit.score_set.get(score_idx, 0.0)))
                 if args.inverse:
                     if score_idx in hit.score_set:
-                        fout.write(" " + str(1 - hit.score_set[score_idx]))
+                        item.append(str(1 - hit.score_set[score_idx]))
                     else:
-                        fout.write(" 0.0")
+                        item.append("0.0")
             if args.duration:
-                fout.write(" " + str(hit.dur))
-            # Handle the target
-            if not args.gold:
-                fout.write(" 0")
-            else: # Find the target.
-                fout.write(" " + FindTarget(hit, k, gold, target))
-
-            fout.write("\n")
+                item.append(str(hit.dur))
+            if args.gold:
+                feature_target = FindTarget(hit, k, gold, target)
+            if feature_target != "0" or not args.filter_zero_target:
+                item.append(feature_target)
+                fout.write(" ".join(item) + "\n")
         
     fout.close()
 

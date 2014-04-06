@@ -9,6 +9,7 @@ class KWHit:
         self.channel = channel
         self.filename = filename
         self.decision = decision
+        self.score_set = {}
         self.extra = {}
 
     @classmethod

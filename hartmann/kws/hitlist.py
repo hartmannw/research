@@ -9,6 +9,7 @@ class Hitlist:
         self.filename = None
         self.language = None
         self.systemid = None
+        self.max_overlap = 0.01
 
     # Loads the XML formatted definition file. For each keyword, creates an 
     # empty list of hits in self.hitlist. Returns a dictionary mapping the 
@@ -31,8 +32,6 @@ class Hitlist:
                     inkeyword = True
                     kwid = re.search('kwid=\"([0-9A-Z\-\.]+)\"', line).group(1)
         return kwmap
-
-
 
     def LoadXML(self, filename):
         self.filename = filename
@@ -60,12 +59,68 @@ class Hitlist:
             fout.write("  </detected_kwlist>\n")
         fout.write('</kwslist>\n')
 
+    def InitializeScoreSet(self, id):
+        for kw in self.hitlist:
+            for hit in self.hitlist[kw]:
+                hit.score_set[id] = hit.score
+
+    # Merges the hits in the hitlist. Adds the score into the score set.
+    def MergeHitlist(self, hitlist):
+        # Get a list of all keywords.
+        keywords = sorted(set(self.keywords + hitlist.keywords))
+
+        for kw in keywords:
+            self.hitlist[kw] = self.CompactKWHits(self.hitlist.get(kw, []) + hitlist.hitlist.get(kw,[]))
+
+    def CompactKWHits(self, hits):
+        ret = []
+        hits = sorted(hits, key=attrgetter('filename', 'channel', 'tbeg'))
+        for a in hits:
+            if len(ret) > 0:
+                b = ret[-1]
+                if a.Overlap(b) > self.max_overlap:
+                    for k, val in a.score_set.iteritems(): # Should only be 1.
+                        if val > max(b.score_set.values()):
+                            b.tbeg = a.tbeg
+                            b.dur = a.dur
+                        b.score_set[k] = max([val, b.score_set.get(k,0)])
+                else:
+                    ret.append(a)
+            else:
+                ret.append(a)
+        return ret
+
+    # Update the real score based on the score set.
+    def UpdateScore(self, merge_type, score_set_size, threshold=0.5, unscored=False):
+        for kw in self.keywords:
+            for i,hit in enumerate(self.hitlist[kw]):
+                if unscored: # Add score of 0 for any missing scores in score_set.
+                    for idx in range(score_set_size):
+                        hit.score_set[idx] = hit.score_set.get(idx, 0.0)
+                if merge_type == "min":
+                    self.hitlist[kw][i].score = min(hit.score_set.values())
+                elif merge_type == "max" or merge_type == "fast":
+                    self.hitlist[kw][i].score = max(hit.score_set.values())
+                elif merge_type == "mean":
+                    self.hitlist[kw][i].score = float( sum(hit.score_set.values()) / 
+                        len(hit.score_set) )
+                elif args.merge == "gmean":
+                    self.hitlist[kw][i].score = float(math.exp( 
+                        sum( [math.log(x) / len(hit.score_set) for x in hit.score_set.values()])))
+                elif args.merge == "rank":
+                    self.hitlist[kw][i].score = hit.score_set[min(hit.score_set.keys())]
+                if self.hitlist[kw][i].score >= threshold:
+                    self.hitlist[kw][i].decision = "YES"
+                else:
+                    self.hitlist[kw][i].decision = "NO"
+
+
     # Search the current list of hits. If an overlapping hit exists, add the 
     # likelihood. If it does not exist, just append to the end.
     def AppendSum(self, kwid, kwhit):
         found = False
         for x in self.hitlist.get(kwid, []):
-            if x.Overlap(kwhit) > 0.01:
+            if x.Overlap(kwhit) > self.max_overlap:
                 found = True
                 if kwhit.score > x.score:
                     x.tbeg = kwhit.tbeg
@@ -74,6 +129,13 @@ class Hitlist:
                 break
         if not found:
             self.hitlist[kwid].append(kwhit)
+
+    # Search the hitlist, return True if an overlapping hit exists.
+    def OverlapExist(self, kwhit, kwid):
+        for x in self.hitlist.get(kwid, []):
+            if x.Overlap(kwhit) > self.max_overlap:
+                return True
+        return False
 
 
     def PruneByCount(self, max_count):
