@@ -78,7 +78,7 @@ def main():
             features.append(FeatureWords(keyword))
         if args.characters:
             features.append(FeatureCharacters(keyword))
-        fout.write(id + " " + original_kw + " " + " ".join([str(f) for f in features]) + "\n")
+        fout.write(id + " " + " ".join([str(f) for f in features]) + "\n")
     fout.close()
 
 

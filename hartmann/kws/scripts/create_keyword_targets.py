@@ -44,7 +44,7 @@ def main():
             fout.write(kwid + " 0 0\n")
         else:
             positive = 1.0 / total
-            negative = args.beta / (args.seconds - total)
+            negative = -args.beta / (args.seconds - total)
             fout.write(kwid + " " + str(positive) + " " + str(negative) + "\n")
     fout.close()
 
