@@ -52,9 +52,13 @@ def main():
                 tstart = float(data[3])
                 dur = float(data[4])
                 word = data[5]
+
+                if data[6] == "fp" or data[6] == "frag":
+                    tend = tstart + dur
+                    continue
                 if args.lowercase:
                     word = word.lower()
-                if channel != last_channel or last_file != fileid or (tstart - tend) > args.max_silence:
+                if channel != last_channel or last_file != fileid or (tstart - tend) > args.max_silence or data[6] != "lex":
                     history_word = [] # Clear history because the speech is not connected.
                     history_start = []
                 last_file = fileid
@@ -65,7 +69,7 @@ def main():
                 # Search over all words in the history and see if we have a match
                 for i in range(len(history_word)):
                     if " ".join(history_word[i:]) in kwid:
-                        hitlist.AppendSum(kwid[" ".join(history_word[i:])], 
+                        hitlist.Append(kwid[" ".join(history_word[i:])], 
                             KWHit(1.0, history_start[i], tend-history_start[i], channel, fileid, "YES"))
    
     # Write merged hitlist.
