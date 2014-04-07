@@ -132,6 +132,8 @@ class Hitlist:
     
     # Adds the given hit, regardless if an overlapping hit already exists.
     def Append(self, kwid, kwhit):
+        if kwid not in self.hitlist:
+            self.hitlist[kwid] = []
         self.hitlist[kwid].append(kwhit)
 
     # Search the hitlist, return True if an overlapping hit exists.
