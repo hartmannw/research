@@ -28,6 +28,10 @@ class KWHit:
         self.decision = re.search('decision=\"([^\".]+)\"', line).group(1)
 
     def GetXMLLine(self):
+        if self.score > 1:
+            self.score = 1.0
+        elif self.score < 0:
+            self.score = 0
         ret = ("<kw tbeg=\"" + str(self.tbeg) + "\"" + 
                 " dur=\"" + str(self.dur) + "\"" + 
                 " file=\"" + self.filename + "\"" + 

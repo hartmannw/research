@@ -129,6 +129,10 @@ class Hitlist:
                 break
         if not found:
             self.hitlist[kwid].append(kwhit)
+    
+    # Adds the given hit, regardless if an overlapping hit already exists.
+    def Append(self, kwid, kwhit):
+        self.hitlist[kwid].append(kwhit)
 
     # Search the hitlist, return True if an overlapping hit exists.
     def OverlapExist(self, kwhit, kwid):
