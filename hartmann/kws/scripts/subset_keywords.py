@@ -22,11 +22,11 @@ def main():
     parser.add_argument("--lowercase", "-l", action='store_true', 
             help='Convert all text to lowercase.')
     parser.add_argument("--iv", action='store_true', 
-            help='In-vocabulary feature is written.')
+            help='Keep IV words.')
     parser.add_argument("--oov", action='store_true', 
-            help='Out-of-vocabulary feature is written.')
+            help='Keep OOV words.')
     parser.add_argument("--exact", action='store_true', 
-            help='Feature that is 1 only if the exact sequence of keywords is in the transcript.')
+            help='Only keep keywords seen in this exact order..')
     parser.add_argument("--percentage-oov", type=float, 
             help='Keeps keywords >= the given value.')
     parser.add_argument("--percentage-iv", type=float, 
@@ -39,9 +39,9 @@ def main():
             ' file to write the keyword features.')
     args = parser.parse_args()
 
+    # Load the transcipt
     words = {} # Set of in-vocabulary words.
     transcript = []
-    # Load the transcipt
     with codecs.open(args.transcript, mode='r', encoding=args.codec) as fin:
         for line in fin:
             if args.lowercase:

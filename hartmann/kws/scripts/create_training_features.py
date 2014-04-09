@@ -102,6 +102,8 @@ def main():
     fout.close()
 
 def FindTarget(hit, keyword, gold, target):
+    if keyword not in gold.hitlist: # We must not be interested in this keyword.
+        return "0"
     if gold.OverlapExist(hit, keyword):
         return target.get(keyword, ["1", "-1"])[0]
     else:
