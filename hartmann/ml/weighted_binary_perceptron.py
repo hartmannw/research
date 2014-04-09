@@ -59,8 +59,17 @@ class WeightedBinaryPerceptron:
             if not self.SignMatch(self.target[i], guess):
                 for wi, w in enumerate(self.weight):
                     self.weight[wi] = w + (self.target[i] * self.learning_rate * self.data[i][wi])
-                    self.avgweight[wi] = (((self.update_count-1.0) / self.update_count) * self.avgweight[wi]) + (
-                            (1.0 / self.update_count) * self.weight[wi])
+                    #self.avgweight[wi] = (((self.update_count-abs(self.target[i])) / self.update_count) * self.avgweight[wi]) + (
+                    #        (abs(self.target[i]) / self.update_count) * self.weight[wi])
+                #self.update_count = self.update_count + abs(self.target[i])
+                #print i, guess, self.target[i]
+                #print self.weight
+                #print self.avgweight
+            for wi, w in enumerate(self.weight):
+                inc = abs(self.target[i])
+                self.avgweight[wi] = (((self.update_count-inc) / self.update_count) * self.avgweight[wi]) + (
+                        (inc / self.update_count) * self.weight[wi])
+            self.update_count = self.update_count + inc
 
     def TrainModel(self, max_iterations=20):
         if len(self.cv_id):

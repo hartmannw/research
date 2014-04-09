@@ -28,6 +28,8 @@ def main():
             help="Add the inverse of each score.")
     parser.add_argument("--duration", "-d", action='store_true', 
             help="Add the duration as a feature.")
+    parser.add_argument("--bias", "-b", action='store_true', 
+            help="Adds the count of non-zero probabilities as a bias.")
     parser.add_argument("--kwfeatures", "-k", help="File containing keyword features.")
     parser.add_argument("--target", "-t", help="File containing keyword specific target information.")
     parser.add_argument("--gold", "-g", help="Gold standard hitlist.")
@@ -77,8 +79,11 @@ def main():
             # Now add the actual features
             if args.kwfeatures:
                 item.append(kwfeatures[k])
+            count = 0
             for score_idx in range(len(args.kwlist)):
                 item.append(str(hit.score_set.get(score_idx, 0.0)))
+                if score_idx in hit.score_set:
+                    count = count + 1
                 if args.inverse:
                     if score_idx in hit.score_set:
                         item.append(str(1 - hit.score_set[score_idx]))
@@ -86,6 +91,8 @@ def main():
                         item.append("0.0")
             if args.duration:
                 item.append(str(hit.dur))
+            if args.bias:
+                item.append(str(count))
             if args.gold:
                 feature_target = FindTarget(hit, k, gold, target)
             if feature_target != "0" or not args.filter_zero_target:
