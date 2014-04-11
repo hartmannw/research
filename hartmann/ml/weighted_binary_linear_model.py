@@ -5,7 +5,6 @@ import copy
 
 class WeightedBinaryLinearModel:
     def __init__(self):
-        self.model_type = "averaged_perceptron"
         self.weight = []
         self.data = []
         self.target = []
@@ -50,15 +49,47 @@ class WeightedBinaryLinearModel:
         for x in self.data[self.train_id[0]]:
             self.weight.append(random.uniform(-1.0, 1.0) * magnitude)
 
-    def TrainModel(self, max_iterations=20):
-        if self.model_type == "perceptron":
+    def TrainModel(self, model_type, max_iterations=20, penalty=0.0):
+        if model_type == "perceptron":
             self.TrainModelPerceptron(False, max_iterations)
-        elif self.model_type == "averaged_perceptron":
+        elif model_type == "averaged_perceptron":
             self.TrainModelPerceptron(True, max_iterations)
+        elif model_type == 'logistic_regression':
+            self.TrainModelLogistic(penalty, max_iterations)
+
+    def TrainIterationLogistic(self, penalty=0.0):
+        for i in self.train_id:
+            guess = self.EvaluateItem(self.weight, self.data[i])
+            guess = math.exp(guess) / (1 + math.exp(guess))
+            target = 0             # Set the target to either 0 (when self.target is negative)
+            if self.target[i] > 0: # or 1, when self.target is positive.
+                target = 1
+            for wi, w in enumerate(self.weight):
+                self.weight[wi] = w + (abs(self.target[i]) * self.learning_rate * self.data[i][wi] * (target - guess)) - (
+                    self.learning_rate * w * abs(self.target[i]) * penalty)
+
+    def TrainModelLogistic(self, regularize=False, max_iterations=20):
+        if len(self.cv_id):
+            evalset = self.cv_id
+        else: # We have no CV set.
+            evalset = self.train_id
+        weight = copy.copy(self.weight)
+        prev_llh = float('-inf')
+        llh = self.ScoreSubset(evalset, self.weight)
+        iteration = 0
+        while iteration < max_iterations and llh > prev_llh:
+            # Keep a copy of the weight vector from the previous iteration.
+            weight = copy.copy(self.weight)
+            self.TrainIterationLogistic(regularize)
+            prev_llh = llh
+            llh = self.ScoreSubset(evalset, self.weight)
+            print "Iteration", iteration, ": ", llh 
+            iteration = iteration + 1
+        if prev_llh > llh: # Last iteration was better
+            self.weight = copy.copy(weight)
 
 
-    def TrainIterationPerceptron(self, update_count=1, averaged=True):
-        avgweight = copy.copy(self.weight)
+    def TrainIterationPerceptron(self, avgweight, update_count=1):
         for i in self.train_id:
             guess = self.EvaluateItem(self.weight, self.data[i])
             if not self.SignMatch(self.target[i], guess):
@@ -69,25 +100,34 @@ class WeightedBinaryLinearModel:
                 avgweight[wi] = (((update_count-inc) / update_count) * avgweight[wi]) + (
                         (inc / update_count) * self.weight[wi])
             update_count = update_count + inc
-        if averaged:
-            self.weight = copy.copy(avgweight)
-        return update_count
+        return avgweight, update_count
 
+    # Maintains two weight vectors. One is the vector from the previous
+    # iteration and the other (avgweight) is the averaged weight vector. The
+    # averaged perceptron is always calculated even if it isn't used.
     def TrainModelPerceptron(self, averaged=True, max_iterations=20):
         if len(self.cv_id):
             evalset = self.cv_id
         else: # We have no CV set.
             evalset = self.train_id
         weight = copy.copy(self.weight)
+        avgweight = copy.copy(self.weight)
         update_count = 1
-        prev_llh = -1000000000
+        prev_llh = float('-inf')
         llh = self.ScoreSubset(evalset, self.weight)
         iteration = 0
         while iteration < max_iterations and llh > prev_llh:
-            weight = copy.copy(self.weight)
-            update_count = self.TrainIterationPerceptron(update_count, averaged)
+            # Keep a copy of the weight vector from the previous iteration.
+            if averaged:
+                weight = copy.copy(avgweight)
+            else:
+                weight = copy.copy(self.weight)
+            avgweight, update_count = self.TrainIterationPerceptron(avgweight, update_count)
             prev_llh = llh
-            llh = self.ScoreSubset(evalset, self.weight)
+            if averaged:
+                llh = self.ScoreSubset(evalset, avgweight)
+            else:
+                llh = self.ScoreSubset(evalset, self.weight)
             print "Iteration", iteration, ": ", llh 
             iteration = iteration + 1
         if prev_llh > llh: # Last iteration was better
