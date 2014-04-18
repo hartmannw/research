@@ -35,6 +35,8 @@ def main():
     parser.add_argument("--gold", "-g", help="Gold standard hitlist.")
     parser.add_argument("--filter-zero-target", "-f", action='store_true', 
             help="Remove entries with a target of 0.")
+    parser.add_argument("--seconds", "-s", default=5.0, type=float, 
+            help='Adds a collar around the hit to allow for non-overlapping hits.')
   
     args = parser.parse_args()
 
@@ -68,6 +70,10 @@ def main():
         fout = codecs.open(args.output, mode='w', encoding=args.codec)
     
     for k in sorted(hitlist.keywords):
+        for hit in gold.hitlist[k]:
+            # Add a collar for the matching.
+            hit.tbeg = hit.tbeg - args.seconds
+            hit.dur=hit.dur + args.seconds
         for hit in hitlist.hitlist[k]:
             item = []
             feature_target = "0"

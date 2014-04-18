@@ -139,7 +139,7 @@ class Hitlist:
     # Search the hitlist, return True if an overlapping hit exists.
     def OverlapExist(self, kwhit, kwid):
         for x in self.hitlist.get(kwid, []):
-            if x.Overlap(kwhit) > self.max_overlap:
+            if x.Overlap(kwhit) >= self.max_overlap:
                 return True
         return False
 

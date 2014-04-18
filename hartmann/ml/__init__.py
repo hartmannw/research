@@ -1,2 +1,1 @@
-from hartmann.ml.weighted_binary_perceptron import WeightedBinaryPerceptron
 from hartmann.ml.weighted_binary_linear_model import WeightedBinaryLinearModel
