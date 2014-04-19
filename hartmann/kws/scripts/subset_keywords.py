@@ -21,6 +21,8 @@ def main():
             'the input and output.')
     parser.add_argument("--lowercase", "-l", action='store_true', 
             help='Convert all text to lowercase.')
+    parser.add_argument("--keyword-map", "-k", 
+            help='Mapping that converts individual keywords.')
     parser.add_argument("--iv", action='store_true', 
             help='Keep IV words.')
     parser.add_argument("--oov", action='store_true', 
@@ -51,6 +53,14 @@ def main():
             for word in data:
                 words[word] = True
 
+    keyword_map = {}
+    # Load the keyword map, if given.
+    if args.keyword_map:
+        with codecs.open(args.keyword_map, mode='r', encoding=args.codec) as fin:
+            for line in fin:
+                data = line.split()
+                keyword_map[data[0]] = data[1]
+
     header = GetKeywordDefinitionHeader(args)
 
     if args.output == "-":
@@ -63,6 +73,8 @@ def main():
     kwdef = hitlist.LoadKeywordDefinition(args.kwdefinition)
     for id, keyword in sorted(kwdef.items()):
         keep = True
+        if args.keyword_map:
+            keyword = " ".join([keyword_map.get(x,x) for x in keyword.split()])
         original_kw = keyword
         if args.lowercase:
             keyword = keyword.lower()
